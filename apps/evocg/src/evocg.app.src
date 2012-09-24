@@ -1,0 +1,21 @@
+%%-*- encoding: utf-8 -*-
+%%-*- mode: erlang -*-
+{application, evocg,
+ [
+  {description, "Evolution card game web server"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  crypto,
+                  public_key,
+                  ssl,
+                  cowboy,
+                  compiler,
+                  syntax_tools,
+                  lager
+                 ]},
+  {mod, { evocg_app, []}},
+  {env, []}
+ ]}.
