@@ -8,6 +8,9 @@ APP_DIR=$(BASE)/apps
 compile:
 	$(REBAR) compile
 
+compile-app-only:
+	$(REBAR) compile skip_deps=true
+
 all: dep compile
 
 dep:

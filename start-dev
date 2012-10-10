@@ -1,0 +1,5 @@
+#!/bin/bash
+
+NODE='evocg-dev@localhost'
+
+erl -sname ${NODE} -pz deps/*/ebin -pz apps/evocg/ebin -s reloader -s evocg

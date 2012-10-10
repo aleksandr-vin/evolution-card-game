@@ -8,10 +8,6 @@
   {applications, [
                   kernel,
                   stdlib,
-                  crypto,
-                  public_key,
-                  ssl,
-                  cowboy,
                   compiler,
                   syntax_tools,
                   lager
