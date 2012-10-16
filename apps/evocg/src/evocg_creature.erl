@@ -33,11 +33,11 @@
 %% API
 -export([start_link/0,
 	 name/1,
-	 property/1, predator/0]).
+	 property/1, carnivorous/0, period/0]).
 
 %% gen_fsm callbacks
 -export([init/1,
-	 simple/3, predator/3,
+	 simple/3, carnivorous/3,
 	 handle_event/3,
 	 handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
@@ -45,7 +45,8 @@
 
 -record(state, {attrs = [],
 		props = sets:new(),
-		predator = false}).
+		carnivorous = false,
+		evo_state}).
 
 %%%===================================================================
 %%% API
@@ -86,13 +87,29 @@ property(PropName = P) when "норное" == P orelse
 
 %%--------------------------------------------------------------------
 %% @doc
-%% Mutates a creature to a predator.
+%% Mutates a creature to a carnivorous.
 %%
-%% @spec predator() -> ok | {error, Error}
+%% @spec carnivorous() -> ok | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-predator() ->
-    gen_fsm:sync_send_event(?SERVER, predator).
+carnivorous() ->
+    gen_fsm:sync_send_event(?SERVER, carnivorous).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Switch periods in creatures' life.
+%%
+%% Evolution period is changed to starvation period, when the creature must be
+%% fed or it die at the end of the period.
+%%
+%% Starvation period is changed to evolution period, when the creature can
+%% acquire properties, mutate and wait for period change.
+%%
+%% @spec period() -> ok | {error, Error}
+%% @end
+%%--------------------------------------------------------------------
+period() ->
+    gen_fsm:sync_send_all_state_event(?SERVER, period).
 
 %%%===================================================================
 %%% gen_fsm callbacks
@@ -153,14 +170,14 @@ init([]) ->
 simple({property, PropName}, _From, State0) ->
     {Reply, State1} = set_property(PropName, State0),
     {reply, Reply, simple, State1};
-simple(predator, _From, #state{predator = false} = State0) ->
-    ?info("~s became a predator.", [get_name(State0)]),
+simple(carnivorous, _From, #state{carnivorous = false} = State0) ->
+    ?info("~s became a carnivorous.", [get_name(State0)]),
     Reply = ok,
-    {reply, Reply, predator, State0#state{predator = true}}.
+    {reply, Reply, carnivorous, State0#state{carnivorous = true}}.
 
-predator({property, PropName}, _From, State0) ->
+carnivorous({property, PropName}, _From, State0) ->
     {Reply, State1} = set_property(PropName, State0),
-    {reply, Reply, predator, State1}.
+    {reply, Reply, carnivorous, State1}.
 
 
 %%--------------------------------------------------------------------
@@ -198,6 +215,13 @@ handle_event(_Event, StateName, State) ->
 handle_sync_event({name, String}, _From, StateName, State0) ->
     {Reply, State1} = set_name(String, State0),
     {reply, Reply, StateName, State1};
+handle_sync_event(period, _From, StateName, State0) ->
+    case is_evolution(StateName) of
+	true ->
+	    {reply, ok, starvation, State0#state{evo_state = StateName}};
+	false ->
+	    switch_to_evolution(StateName, State0)
+    end;
 handle_sync_event(_Event, _From, StateName, State) ->
     Reply = {error, 'not-supported'},
     {reply, Reply, StateName, State}.
@@ -259,8 +283,8 @@ set_name(String, #state{attrs = Attrs} = State0) ->
     ?info("~s acquire new name ~s.", [get_fqn(State0), String]),
     {ok, State0#state{attrs = [{name, String} | Attrs]}}.
 
-get_char(#state{predator = true}) ->
-    "Predator";
+get_char(#state{carnivorous = true}) ->
+    "Carnivorous";
 get_char(_) ->
     "".
 
@@ -283,3 +307,10 @@ set_property(Name, #state{props = Props0} = State0) ->
 	    ?info("~s acquire property \"~s\".", [get_fqn(State0), Name]),
 	    {ok, State0#state{props = sets:add_element(Name, Props0)}}
     end.
+
+switch_to_evolution(_StateName, #state{evo_state = EvoState} = State) ->
+    {reply, ok, EvoState, State}.
+
+is_evolution(simple) -> true;
+is_evolution(carnivorous) -> true;
+is_evolution(_) -> false.
