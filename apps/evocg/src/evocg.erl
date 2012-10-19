@@ -8,11 +8,11 @@
 %% ===================================================================
 start() ->
     ok = lists:foreach(fun (A) -> ok = application:start(A) end,
-		       applications()).
+                       applications()).
 
 stop() ->
     ok = lists:foreach(fun (A) -> ok = application:stop(A) end,
-		       lists:reverse(applications())).
+                       lists:reverse(applications())).
 
 %% ===================================================================
 %% Internals

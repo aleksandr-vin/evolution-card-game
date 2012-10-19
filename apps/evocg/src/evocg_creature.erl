@@ -32,21 +32,21 @@
 
 %% API
 -export([start_link/0,
-	 name/1,
-	 property/1, carnivorous/0, period/0]).
+         name/1,
+         property/1, carnivorous/0, period/0]).
 
 %% gen_fsm callbacks
 -export([init/1,
-	 simple/3, carnivorous/3,
-	 handle_event/3,
-	 handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
+         simple/3, carnivorous/3,
+         handle_event/3,
+         handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
 -define(SERVER, ?MODULE).
 
 -record(state, {attrs = [],
-		props = sets:new(),
-		carnivorous = false,
-		evo_state}).
+                props = sets:new(),
+                carnivorous = false,
+                evo_state}).
 
 %%%===================================================================
 %%% API
@@ -82,7 +82,7 @@ name(String) when is_list(String) ->
 %% @end
 %%--------------------------------------------------------------------
 property(PropName = P) when "норное" == P orelse
-			    "большое" == P orelse
+                            "большое" == P orelse
                             "отбрасывание хвоста" == P ->
     gen_fsm:sync_send_event(?SERVER, {property, PropName}).
 
@@ -218,10 +218,10 @@ handle_sync_event({name, String}, _From, StateName, State0) ->
     {reply, Reply, StateName, State1};
 handle_sync_event(period, _From, StateName, State0) ->
     case is_evolution(StateName) of
-	true ->
-	    {reply, ok, starvation, State0#state{evo_state = StateName}};
-	false ->
-	    switch_to_evolution(StateName, State0)
+        true ->
+            {reply, ok, starvation, State0#state{evo_state = StateName}};
+        false ->
+            switch_to_evolution(StateName, State0)
     end;
 handle_sync_event(_Event, _From, StateName, State) ->
     Reply = {error, 'not-supported'},
@@ -275,9 +275,9 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 get_name(#state{attrs = Attrs}) ->
     case proplists:get_value(name, Attrs) of
-	undefined ->
-	    "Creature";
-	Val -> Val
+        undefined ->
+            "Creature";
+        Val -> Val
     end.
 
 set_name(String, #state{attrs = Attrs} = State0) ->
@@ -291,22 +291,22 @@ get_char(_) ->
 
 get_fully_qualified_name(State) ->
     lists:flatten([case get_char(State) of
-		       undefined -> [];
-		       V -> [V, " "]
-		   end,
-		   get_name(State)]).
+                       undefined -> [];
+                       V -> [V, " "]
+                   end,
+                   get_name(State)]).
 
 get_fqn(State) ->
     get_fully_qualified_name(State).
 
 set_property(Name, #state{props = Props0} = State0) ->
     case sets:is_element(Name, Props0) of
-	true ->
-	    ?error("~s already have property \"~s\".", [get_fqn(State0), Name]),
-	    {{error, 'already-have-property'}, State0};
-	false ->
-	    ?info("~s acquire property \"~s\".", [get_fqn(State0), Name]),
-	    {ok, State0#state{props = sets:add_element(Name, Props0)}}
+        true ->
+            ?error("~s already have property \"~s\".", [get_fqn(State0), Name]),
+            {{error, 'already-have-property'}, State0};
+        false ->
+            ?info("~s acquire property \"~s\".", [get_fqn(State0), Name]),
+            {ok, State0#state{props = sets:add_element(Name, Props0)}}
     end.
 
 switch_to_evolution(_StateName, #state{evo_state = EvoState} = State) ->
