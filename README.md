@@ -26,4 +26,6 @@ And launch a development node `./start-dev`
 
 ##Some scenarios
 
-Please look at test cases of *apps/evocg/tests/evocg_creature_SUITE.erl*
+Now you can start from scenarios in [test cases](https://github.com/aleksandr-vin/evolution-card-game/blob/master/apps/evocg/test/evocg_creature_SUITE.erl#L130 "sample_scenario_case")
+
+More will be added soon.
