@@ -6,8 +6,6 @@
 %%%
 %%% For now it is only one allowed to be created on a node.
 %%%
-%%% TODO: Add more than one creatures on one node.
-%%%
 %%% The creature is created in simple (evoluting) state without
 %%% properties. Then it can acquire properties changing states to predator for
 %%% example or start starving (it's a specified state).
@@ -31,9 +29,9 @@
 -include("log.hrl").
 
 %% API
--export([start_link/0,
-         name/1,
-         property/1, carnivorous/0, period/0]).
+-export([start_link/1,
+         name/2,
+         property/2, carnivorous/1, period/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -41,12 +39,11 @@
          handle_event/3,
          handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
--define(SERVER, ?MODULE).
-
 -record(state, {attrs = [],
                 props = sets:new(),
                 carnivorous = false,
-                evo_state}).
+                evo_state,
+                player_name}).
 
 %%%===================================================================
 %%% API
@@ -58,43 +55,43 @@
 %% initialize. To ensure a synchronized start-up procedure, this
 %% function does not return until Module:init/1 has returned.
 %%
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
+%% @spec start_link(Args :: list()) -> {ok, Pid} | ignore | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-start_link() ->
-    gen_fsm:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Args) ->
+    gen_fsm:start_link(?MODULE, Args, []).
 
 %%--------------------------------------------------------------------
 %% @doc
 %% Names a creature (not FSM).
 %%
-%% @spec name(String :: string()) -> ok | {error, Error}
+%% @spec name(FsmRef, String :: string()) -> ok | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-name(String) when is_list(String) ->
-    gen_fsm:sync_send_all_state_event(?SERVER, {name, String}).
+name(FsmRef, String) when is_list(String) ->
+    gen_fsm:sync_send_all_state_event(FsmRef, {name, String}).
 
 %%--------------------------------------------------------------------
 %% @doc
 %% Sets a property to the creature.
 %%
-%% @spec property(PropName :: string()) -> ok | {error, Error}
+%% @spec property(FsmRef, PropName :: string()) -> ok | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-property(PropName = P) when "норное" == P orelse
-                            "большое" == P orelse
-                            "отбрасывание хвоста" == P ->
-    gen_fsm:sync_send_event(?SERVER, {property, PropName}).
+property(FsmRef, PropName = P) when "норное" == P orelse
+                                    "большое" == P orelse
+                                    "отбрасывание хвоста" == P ->
+    gen_fsm:sync_send_event(FsmRef, {property, PropName}).
 
 %%--------------------------------------------------------------------
 %% @doc
 %% Mutates a creature to a carnivorous.
 %%
-%% @spec carnivorous() -> ok | {error, Error}
+%% @spec carnivorous(FsmRef) -> ok | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-carnivorous() ->
-    gen_fsm:sync_send_event(?SERVER, carnivorous).
+carnivorous(FsmRef) ->
+    gen_fsm:sync_send_event(FsmRef, carnivorous).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -106,11 +103,11 @@ carnivorous() ->
 %% Starvation period is changed to evolution period, when the creature can
 %% acquire properties, mutate and wait for period change.
 %%
-%% @spec period() -> ok | {error, Error}
+%% @spec period(FsmRef) -> ok | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-period() ->
-    gen_fsm:sync_send_all_state_event(?SERVER, period).
+period(FsmRef) ->
+    gen_fsm:sync_send_all_state_event(FsmRef, period).
 
 %%%===================================================================
 %%% gen_fsm callbacks
@@ -129,9 +126,9 @@ period() ->
 %%                     {stop, StopReason}
 %% @end
 %%--------------------------------------------------------------------
-init([]) ->
-    ?info("Simple creature is born."),
-    {ok, simple, #state{}}.
+init(PlayerName) ->
+    ?info("Simple creature is born in ~s's lands.", [PlayerName]),
+    {ok, simple, #state{player_name = PlayerName}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -280,9 +277,21 @@ get_name(#state{attrs = Attrs}) ->
         Val -> Val
     end.
 
-set_name(String, #state{attrs = Attrs} = State0) ->
-    ?info("~s acquire new name ~s.", [get_fqn(State0), String]),
-    {ok, State0#state{attrs = [{name, String} | Attrs]}}.
+set_name(String, State0) ->
+    NewRegName = regname(String),
+    true = case get_name(State0) of
+               "Creature" ->
+                   ?info("~s acquire a name ~s.", [get_fqn(State0), String]),
+                   ?debug("Registering under name ~p", [NewRegName]),
+                   erlang:register(NewRegName, self());
+               Name ->
+                   OldRegName = regname(Name),
+                   ?debug("Unregistering ~p", [OldRegName]),
+                   true = erlang:unregister(OldRegName),
+                   ?debug("Registering under name ~p", [NewRegName]),
+                   erlang:register(NewRegName, self())
+           end,
+    {ok, State0#state{attrs = [{name, String} | State0#state.attrs]}}.
 
 get_char(#state{carnivorous = true}) ->
     "Carnivorous";
@@ -315,3 +324,21 @@ switch_to_evolution(_StateName, #state{evo_state = EvoState} = State) ->
 is_evolution(simple) -> true;
 is_evolution(carnivorous) -> true;
 is_evolution(_) -> false.
+
+regname(String) ->
+    regname(String, self()).
+
+%% This is a fix for observer now showing registered procs name that
+%% starts with pid. So names like '<0.112.0> blah-blah-blah' will be
+%% shown like '<0.112.0>'.
+-define(observer_fix(StringStartingWithPid), [$ | StringStartingWithPid]).
+
+regname(String, Pid) when is_pid(Pid) ->
+    erlang:list_to_atom(?observer_fix(erlang:pid_to_list(Pid) ++ " the " ++ String)).
+
+%%%===================================================================
+%%% Unit tests
+%%%===================================================================
+
+-include_lib("eunit/include/eunit.hrl").
+
