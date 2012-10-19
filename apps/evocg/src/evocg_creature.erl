@@ -81,7 +81,8 @@ name(String) when is_list(String) ->
 %% @end
 %%--------------------------------------------------------------------
 property(PropName = P) when "норное" == P orelse
-			    "большое" == P ->
+			    "большое" == P orelse
+                            "отбрасывание хвоста" == P ->
     gen_fsm:sync_send_event(?SERVER, {property, PropName}).
 
 %%--------------------------------------------------------------------
