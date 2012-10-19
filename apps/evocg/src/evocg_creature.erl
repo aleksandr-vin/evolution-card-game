@@ -342,3 +342,5 @@ regname(String, Pid) when is_pid(Pid) ->
 
 -include_lib("eunit/include/eunit.hrl").
 
+observer_fix_test() ->
+    ?assertMatch(" " ++ _, erlang:atom_to_list(regname("blah-blah-blah"))).
