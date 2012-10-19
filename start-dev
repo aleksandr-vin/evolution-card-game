@@ -2,4 +2,8 @@
 
 NODE='evocg-dev@localhost'
 
-erl -sname ${NODE} -pz deps/*/ebin -pz apps/evocg/ebin -s reloader -s evocg
+erl -sname ${NODE} -pz deps/*/ebin -pz apps/evocg/ebin \
+    -config start-dev \
+    -s reloader \
+    -s observer \
+    -s evocg
