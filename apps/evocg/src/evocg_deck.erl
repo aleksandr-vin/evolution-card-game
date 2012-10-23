@@ -5,41 +5,46 @@
 
 -module(evocg_deck).
 -behaviour(gen_server).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include("../include/cards.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
+% behavior functions
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+%api functions
+-export([start_link/0, prepare_for_new_game/1]).
 
 
 
--define(server_name,evo_card_deck).
+-record(state, {deck, players}).
+
+
+
+
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([]).
--export([start_link/0, prepare_for_new_game/1]).
+
 
 %%
-%%@doc
-%%Start card deck process
+%% @doc
+%% Start card deck process
 %%
 start_link() ->
-	gen_server:start_link({local,?server_name}, ?MODULE, [], []).
+	gen_server:start_link({local,?MODULE}, ?MODULE, [], []).
 
 %%
-%%@doc
-%%Prepare for new game
+%% @doc
+%% Prepare for new game
 %% Players - number of players
 %%
 -spec prepare_for_new_game(Players::integer()) -> ok.
 prepare_for_new_game(Players) ->
-	gen_server:cast(?server_name, {new_game, Players}).
+	gen_server:cast(?MODULE, {new_game, Players}).
 %% ====================================================================
 %% Behavioural functions 
 %% ====================================================================
--record(state, {deck, players}).
 
 %% init/1
 %% ====================================================================
@@ -93,7 +98,7 @@ handle_call(Request, From, State) ->
 %% ====================================================================
 handle_cast({new_game, Players}, State) ->
 	ShD = shuffle_deck(get_init_set()),
-    {noreply, State#state{players=Players,deck=ShD}}.
+	{noreply, State#state{players=Players,deck=ShD}}.
 
 
 %% handle_info/2
@@ -143,51 +148,52 @@ code_change(OldVsn, State, Extra) ->
 
 
 %%
-%%@doc
-%%@private
+%% @doc
+%% @private
 %% Shuffling card deck
 shuffle_deck(Deck) ->
-	{A,B,C}=now(),
-	random:seed(A,B,C),
-	lists:map(fun ({_,Y}) ->
-					   Y
-			  end,
-			  lists:keysort(1, 
-							lists:map(fun (X) ->
-											   {random:uniform(100000),X}
-									  end,
-									  Deck)
-						   )
-			 ).
-	
+	random:seed(now()),
+	{_,Y} = 
+		lists:unzip(
+		  lists:keysort(1, 
+						[{random:uniform(100000),X} || X <- Deck]
+					   )
+				   ),
+	Y.
+
 	
 %%
-%%@doc
-%%@private
+%% @doc
+%% @private
 %% Return full set card of the game
 get_init_set() ->
 	lists:flatten(
 	[
-	 lists:duplicate(4, #card{prop=?prp_poisonous,prop_2=?prp_carnivouros}),
+	 % Обычные свойства
 	 lists:duplicate(4, #card{prop=?prp_running}),
-	 lists:duplicate(4, #card{prop=?prp_high_body_weight,prop_2=?prp_carnivouros}),
-	 lists:duplicate(4, #card{prop=?prp_high_body_weight,prop_2=?prp_fat_tissue}),
 	 lists:duplicate(8, #card{prop=?prp_swimming}),
-	 lists:duplicate(4, #card{prop=?prp_burrowing,prop_2=?prp_fat_tissue}),
 	 lists:duplicate(4, #card{prop=?prp_tail_loss}),
 	 lists:duplicate(4, #card{prop=?prp_piracy}),
+	 lists:duplicate(4, #card{prop=?prp_mimicry}),
+	 lists:duplicate(4, #card{prop=?prp_scavanger}),	 
+	 lists:duplicate(4, #card{prop=?prp_poisonous,prop_2=?prp_carnivouros}),
+	 lists:duplicate(4, #card{prop=?prp_high_body_weight,prop_2=?prp_carnivouros}),
+	 lists:duplicate(4, #card{prop=?prp_high_body_weight,prop_2=?prp_fat_tissue}),
+	 lists:duplicate(4, #card{prop=?prp_burrowing,prop_2=?prp_fat_tissue}),
 	 lists:duplicate(4, #card{prop=?prp_hibernation_ability,prop_2=?prp_carnivouros}),
 	 lists:duplicate(4, #card{prop=?prp_sharp_vision,prop_2=?prp_fat_tissue}),
 	 lists:duplicate(4, #card{prop=?prp_camouflage,prop_2=?prp_fat_tissue}),
-	 lists:duplicate(4, #card{prop=?prp_mimicry}),
-	 lists:duplicate(4, #card{prop=?prp_scavanger}),
 	 lists:duplicate(4, #card{prop=?prp_grazing,prop_2=?prp_fat_tissue}),
-	 lists:duplicate(4, #card{prop=?prp_symbiosus}),
+     
+	 % Болезни
 	 lists:duplicate(4, #card{prop=?prp_parasite,prop_2=?prp_carnivouros}),
 	 lists:duplicate(4, #card{prop=?prp_parasite,prop_2=?prp_fat_tissue}),
+	 
+	 % Групповые взаимодействия
+	 lists:duplicate(4, #card{prop=?prp_symbiosus}),
 	 lists:duplicate(4, #card{prop=?prp_cooperation,prop_2=?prp_carnivouros}),
 	 lists:duplicate(4, #card{prop=?prp_cooperation,prop_2=?prp_fat_tissue}),	 
-	 lists:duplicate(4, #card{prop=?prp_cooperation,prop_2=?prp_communication})
+	 lists:duplicate(4, #card{prop=?prp_communication,prop_2=?prp_carnivouros})
 	 ])
 	.
 	
