@@ -1,9 +1,10 @@
 -ifndef(evocg_include_cards_hrl).
 -define(evocg_include_cards_hrl,1).
- 
+-define(field_must_have(Field),throw("field " ++ Field ++ " must have value")).
 
 
--record(card,{prop,prop_2=undefined}). % card properties
+
+-record(card,{prop=?field_must_have("prop"),prop_2}). % card properties
 
 
 %prop_types

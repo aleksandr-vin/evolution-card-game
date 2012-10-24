@@ -211,4 +211,5 @@ shuffle_deck_test() ->
 	SH2 = shuffle_deck(L),
 	?assertNotEqual(SH1,SH2).
 	
-
+card_rec_test() ->
+	?assertThrow("field prop must have value", #card{prop_2=kuku}).
