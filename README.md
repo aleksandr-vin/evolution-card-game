@@ -1,6 +1,9 @@
 evolution-card-game
 ===================
 
+[![Build Status](https://secure.travis-ci.org/aleksandr-vin/evolution-card-game.png)](http://travis-ci.org/aleksandr-vin/evolution-card-game)
+
+
 Implementing Evolution card game for playing on web
 
 Card game source: [online shop](http://igroved.ru/games/evolution-series/evolution/?code=evolution&categoryCode=evolution-series "Igroved")
