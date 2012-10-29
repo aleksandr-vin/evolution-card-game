@@ -1,5 +1,5 @@
 language: erlang
-script: "make all test"
+script: "make REBAR=rebar all test"
 otp_release:
    - R15B02
    - R15B01

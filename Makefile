@@ -1,5 +1,5 @@
 BASE=$(abspath .)
-REBAR=./rebar
+REBAR ?= ./rebar
 
 APP_DIR=$(BASE)/apps
 
