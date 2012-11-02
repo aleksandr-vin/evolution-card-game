@@ -212,4 +212,4 @@ shuffle_deck_test() ->
 	?assertNotEqual(SH1,SH2).
 	
 card_rec_test() ->
-	?assertThrow("field prop must have value", #card{prop_2=kuku}).
+	?assertThrow({error, 'mandatory-field'}, #card{prop_2=kuku}).
