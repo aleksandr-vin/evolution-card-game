@@ -1,20 +1,19 @@
 -ifndef(evocg_include_cards_hrl).
--define(evocg_include_cards_hrl,1).
--define(field_must_have(Field),throw("field " ++ Field ++ " must have value")).
+-define(evocg_include_cards_hrl, 1).
+-define(mandatory_field(Name), Name = throw({error, 'mandatory-field'})).
 
 
 
--record(card,{prop=?field_must_have("prop"),prop_2}). % card properties
+-record(card,{?mandatory_field(prop),prop_2}). % card properties
 
 
-%prop_types
+% prop_types
 
-
--define(prp_carnivouros,prp_carnivouros). % хищник
--define(prp_poisonous,prp_poisonous). % ядовитое
--define(prp_running,prp_running). % быстрое
--define(prp_high_body_weight,prp_high_body_weight). % большой
--define(prp_fat_tissue,prp_fat_tissue). % жировой запас
+-define(prp_carnivouros, prp_carnivouros). % хищник
+-define(prp_poisonous, prp_poisonous). % ядовитое
+-define(prp_running, prp_running). % быстрое
+-define(prp_high_body_weight, prp_high_body_weight). % большой
+-define(prp_fat_tissue, prp_fat_tissue). % жировой запас
 -define(prp_swimming, prp_swimming). % водоплавающее
 -define(prp_burrowing, prp_burrowing). % норное
 -define(prp_tail_loss, prp_tail_loss). % отбрасывание хвоста
